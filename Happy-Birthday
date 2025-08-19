@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy 46th Birthday, Papa!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&family=Great+Vibes&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for 3D graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #f6ad55;
+            --secondary-color: #e53e3e;
+            --text-color: #4a4a4a;
+            --background-start: #fceabb;
+            --background-end: #f8b5a0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-color);
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            touch-action: none; /* Prevents default touch gestures */
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .gui-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            text-align: center;
+            padding: 2rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            max-width: 90%;
+            width: 500px;
+            pointer-events: auto; /* Re-enables pointer events for the GUI */
+        }
+        .title {
+            font-family: 'Great Vibes', cursive;
+            font-size: 3rem;
+            color: var(--secondary-color);
+            text-shadow: 2px 2px #fefcbf;
+            margin-bottom: 0.5rem;
+            animation: bounceIn 1.5s ease-in-out;
+        }
+        .message {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            animation: fadeIn 2s ease-in-out;
+        }
+        .cta-button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: bold;
+            color: white;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .cta-button:hover {
+            background-color: #ed8936;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        .gui-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+            overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #fff;
+            opacity: 0;
+            animation: fall 5s cubic-bezier(0.1, 1, 0.5, 1) forwards;
+        }
+        .sticker {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            z-index: 15;
+            animation: float 5s ease-in-out infinite alternate;
+        }
+        .sticker.top-left { top: 10%; left: 5%; }
+        .sticker.top-right { top: 10%; right: 5%; }
+        .sticker.bottom-left { bottom: 10%; left: 5%; }
+        .sticker.bottom-right { bottom: 10%; right: 5%; }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes float {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="confetti-container" id="confetti-container"></div>
+    <canvas id="birthdayCanvas"></canvas>
+
+    <!-- Stickers/Emojis -->
+    <div class="sticker top-left">🎂</div>
+    <div class="sticker top-right">🎁</div>
+    <div class="sticker bottom-left">🥳</div>
+    <div class="sticker bottom-right">🎉</div>
+
+    <div class="gui-container">
+        <h1 class="title">Happy 46th Birthday, Papa!</h1>
+        <p class="message">
+            To the man who taught me everything, Happy Birthday! 🎉 May your day be as amazing and legendary as you are. Wishing you health, happiness, and all the joy in the world. ❤️
+        </p>
+        <div class="gui-buttons">
+            <button id="confetti-btn" class="cta-button">Confetti Blast! ✨</button>
+            <button id="music-btn" class="cta-button">Play Music 🎶</button>
+        </div>
+        <p class="text-sm mt-4 text-gray-500">Drag with your mouse to rotate the scene!</p>
+    </div>
+
+    <script>
+        // Use window.onload to ensure the entire page is loaded before we start the 3D scene.
+        window.onload = function() {
+            // --- SCENE SETUP ---
+            const canvas = document.getElementById('birthdayCanvas');
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8b5a0); // A starting background color
+
+            // Camera setup
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 20;
+            camera.position.y = 5;
+
+            // Renderer setup
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const spotLight = new THREE.SpotLight(0xffffff, 1.5);
+            spotLight.position.set(0, 30, 20);
+            spotLight.angle = Math.PI / 4;
+            spotLight.penumbra = 0.5;
+            spotLight.castShadow = true;
+            spotLight.shadow.mapSize.width = 1024;
+            spotLight.shadow.mapSize.height = 1024;
+            spotLight.shadow.camera.near = 1;
+            spotLight.shadow.camera.far = 60;
+            scene.add(spotLight);
+
+            // --- OBJECTS ---
+            const floatingObjects = [];
+
+            // Function to create a floating balloon
+            function createBalloon() {
+                const balloonGroup = new THREE.Group();
+
+                // Balloon body
+                const bodyGeometry = new THREE.SphereGeometry(2, 32, 32);
+                const bodyMaterial = new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.castShadow = true;
+                body.position.y = 2;
+                balloonGroup.add(body);
+
+                // Balloon string
+                const stringGeometry = new THREE.CylinderGeometry(0.05, 0.05, 5, 8);
+                const stringMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc });
+                const string = new THREE.Mesh(stringGeometry, stringMaterial);
+                string.position.y = -0.5;
+                balloonGroup.add(string);
+
+                // Initial position
+                balloonGroup.position.set(
+                    (Math.random() - 0.5) * 40,
+                    -10 - Math.random() * 10,
+                    (Math.random() - 0.5) * 40
+                );
+                balloonGroup.userData.speed = 0.01 + Math.random() * 0.05;
+                
+                scene.add(balloonGroup);
+                floatingObjects.push(balloonGroup);
+            }
+
+            // Function to create a gift box
+            function createGift() {
+                const giftGroup = new THREE.Group();
+                const boxGeometry = new THREE.BoxGeometry(4, 3, 4);
+                const boxMaterial = new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff });
+                const box = new THREE.Mesh(boxGeometry, boxMaterial);
+                box.castShadow = true;
+                box.receiveShadow = true;
+                giftGroup.add(box);
+
+                // Ribbon
+                const ribbonMaterial = new THREE.MeshPhongMaterial({ color: 0xCC0000, shininess: 100 });
+                const ribbon1 = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.5, 0.5), ribbonMaterial);
+                const ribbon2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.1, 0.5), ribbonMaterial);
+                const ribbon3 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 4.1), ribbonMaterial);
+
+                giftGroup.add(ribbon1);
+                giftGroup.add(ribbon2);
+                giftGroup.add(ribbon3);
+
+                // Bow
+                const bowGeometry = new THREE.TorusKnotGeometry(1.5, 0.5, 50, 8);
+                const bowMaterial = new THREE.MeshPhongMaterial({ color: 0xFFD700, shininess: 100 });
+                const bow = new THREE.Mesh(bowGeometry, bowMaterial);
+                bow.scale.set(0.3, 0.3, 0.3);
+                bow.position.y = 1.5;
+                giftGroup.add(bow);
+
+                // Initial position
+                giftGroup.position.set(
+                    (Math.random() - 0.5) * 40,
+                    -10 - Math.random() * 10,
+                    (Math.random() - 0.5) * 40
+                );
+                giftGroup.userData.speed = 0.005 + Math.random() * 0.03;
+
+                scene.add(giftGroup);
+                floatingObjects.push(giftGroup);
+            }
+
+            // Create a bunch of balloons and gifts
+            for (let i = 0; i < 20; i++) {
+                createBalloon();
+                createGift();
+            }
+
+            // --- ANIMATION LOOP ---
+            let mouseX = 0, mouseY = 0;
+            let targetX = 0, targetY = 0;
+            const windowHalfX = window.innerWidth / 2;
+            const windowHalfY = window.innerHeight / 2;
+
+            function onMouseMove(event) {
+                mouseX = event.clientX - windowHalfX;
+                mouseY = event.clientY - windowHalfY;
+            }
+
+            function onTouchMove(event) {
+                if (event.touches.length === 1) {
+                    mouseX = event.touches[0].pageX - windowHalfX;
+                    mouseY = event.touches[0].pageY - windowHalfY;
+                }
+            }
+            
+            // Event listeners for mouse/touch
+            canvas.addEventListener('mousemove', onMouseMove, false);
+            canvas.addEventListener('touchmove', onTouchMove, false);
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                targetX = mouseX * 0.001;
+                targetY = mouseY * 0.001;
+
+                camera.rotation.x += 0.05 * (targetY - camera.rotation.x);
+                camera.rotation.y += 0.05 * (targetX - camera.rotation.y);
+
+                // Animate floating objects
+                floatingObjects.forEach(obj => {
+                    obj.position.y += obj.userData.speed;
+                    if (obj.position.y > 20) {
+                        obj.position.y = -10;
+                        obj.position.x = (Math.random() - 0.5) * 40;
+                        obj.position.z = (Math.random() - 0.5) * 40;
+                    }
+                });
+
+                renderer.render(scene, camera);
+            }
+
+            // Handle window resizing
+            window.addEventListener('resize', () => {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            });
+
+            // --- GUI & BUTTON LOGIC ---
+            const confettiBtn = document.getElementById('confetti-btn');
+            const musicBtn = document.getElementById('music-btn');
+
+            // Confetti function
+            function generateConfetti() {
+                const confettiContainer = document.getElementById('confetti-container');
+                const colors = ['#f6ad55', '#e53e3e', '#ecc94b', '#48bb78', '#667eea'];
+                const numberOfPieces = 100;
+                confettiContainer.innerHTML = '';
+                
+                for (let i = 0; i < numberOfPieces; i++) {
+                    const confettiPiece = document.createElement('div');
+                    confettiPiece.className = 'confetti-piece';
+                    confettiPiece.style.left = `${Math.random() * 100}vw`;
+                    confettiPiece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confettiPiece.style.animationDelay = `${Math.random() * 2}s`;
+                    confettiPiece.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                    confettiContainer.appendChild(confettiPiece);
+                }
+            }
+
+            // Music function using Tone.js
+            let synth = null;
+            let isPlaying = false;
+            
+            async function playBirthdayTune() {
+                if (isPlaying) {
+                    // If music is already playing, stop it and reset
+                    if (synth) {
+                        synth.dispose();
+                        synth = null;
+                    }
+                    isPlaying = false;
+                    musicBtn.textContent = 'Play Music 🎶';
+                    return;
+                }
+
+                // Create a new synth if one doesn't exist
+                if (!synth) {
+                    synth = new Tone.Synth().toDestination();
+                }
+
+                const now = Tone.now();
+                const noteDuration = '8n';
+
+                // Simple birthday tune
+                synth.triggerAttackRelease('C4', noteDuration, now);
+                synth.triggerAttackRelease('C4', noteDuration, now + 0.5);
+                synth.triggerAttackRelease('D4', noteDuration, now + 1);
+                synth.triggerAttackRelease('C4', noteDuration, now + 1.5);
+                synth.triggerAttackRelease('F4', '4n', now + 2);
+                synth.triggerAttackRelease('E4', '4n', now + 3);
+
+                isPlaying = true;
+                musicBtn.textContent = 'Stop Music ⏹️';
+            }
+
+            // Button event listeners
+            confettiBtn.addEventListener('click', generateConfetti);
+            musicBtn.addEventListener('click', playBirthdayTune);
+            
+            // Start the 3D animation loop
+            animate();
+        };
+    </script>
+</body>
+</html>
